@@ -18,6 +18,7 @@ import {
   FiLayers,
   FiLinkedin,
   FiMail,
+  FiMessageCircle,
   FiMapPin,
   FiPhone,
   FiSend,
@@ -33,6 +34,21 @@ const Hero3D = dynamic(() => import("@/components/hero/Hero3D").then((mod) => mo
 });
 
 const resumeHref = "/Aravindh_049.pdf";
+const whatsappNumber = "919030706558";
+
+const googleFormConfig = {
+  formResponseUrl: "",
+  fields: {
+    name: "",
+    phone: "",
+    email: "",
+    message: "",
+  },
+} as const;
+
+const isGoogleFormConfigured =
+  Boolean(googleFormConfig.formResponseUrl) &&
+  Object.values(googleFormConfig.fields).every(Boolean);
 
 const navItems = [
   { label: "Home", href: "#home" },
@@ -53,7 +69,7 @@ const socialLinks = [
 const highlights = [
   { value: "3.8/4.0", label: "TGPA" },
   { value: "2+", label: "Active client builds" },
-  { value: "Rs.50K+", label: "Monthly value added" },
+  { value: "Rs.50K+", label: "Amount paid by client" },
 ] as const;
 
 const projects = [
@@ -65,7 +81,8 @@ const projects = [
     features: [
       "Single-brand ordering flow similar to Swiggy/Zomato",
       "Payment integration and database-backed order handling",
-      "Improved monthly revenue by approximately Rs.50,000",
+      "Generated over Rs. 8 Lakhs in total sales/revenue for the client",
+      "Improved monthly revenue by approximately Rs. 75,000",
     ],
     role: "Freelance Developer",
     featured: true,
@@ -267,9 +284,12 @@ export function PortfolioPage() {
   const [cursor, setCursor] = useState({ x: 50, y: 50 });
   const [formState, setFormState] = useState({
     name: "",
+    phone: "",
     email: "",
     message: "",
   });
+  const [submitState, setSubmitState] = useState<"idle" | "submitting" | "success" | "error">("idle");
+  const [lastMessage, setLastMessage] = useState("");
 
   const maskStyle = useMemo(
     () =>
@@ -287,18 +307,40 @@ export function PortfolioPage() {
     setCursor({ x, y });
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setSubmitState("submitting");
 
-    const mailto = new URL("mailto:vishwaphathiaravindh@gmail.com");
-    mailto.searchParams.set("subject", `Portfolio enquiry from ${formState.name || "a visitor"}`);
-    mailto.searchParams.set(
-      "body",
-      `Name: ${formState.name}\nEmail: ${formState.email}\n\n${formState.message}`,
-    );
+    try {
+      if (isGoogleFormConfigured) {
+        const body = new FormData();
+        body.append(googleFormConfig.fields.name, formState.name);
+        body.append(googleFormConfig.fields.phone, formState.phone);
+        body.append(googleFormConfig.fields.email, formState.email);
+        body.append(googleFormConfig.fields.message, formState.message);
 
-    window.location.href = mailto.toString();
+        await fetch(googleFormConfig.formResponseUrl, {
+          method: "POST",
+          mode: "no-cors",
+          body,
+        });
+      } else {
+        console.warn("Google Form is not configured yet. Add the formResponse URL and entry ids.");
+      }
+
+      setLastMessage(formState.message);
+      setSubmitState("success");
+      setFormState({ name: "", phone: "", email: "", message: "" });
+    } catch (error) {
+      console.error(error);
+      setSubmitState("error");
+    }
   };
+
+  const urgentWhatsappHref = useMemo(() => {
+    const message = lastMessage || formState.message || "Hi Aravindh, I need urgent help.";
+    return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+  }, [formState.message, lastMessage]);
 
   return (
     <main className="section-grid relative overflow-x-hidden bg-background text-foreground">
@@ -862,7 +904,7 @@ export function PortfolioPage() {
               </div>
               <div>
                 <p className="display-font text-xl font-semibold text-white">Start a conversation</p>
-                <p className="text-sm text-slate-400">The form opens your email client.</p>
+                <p className="text-sm text-slate-400">Share your details and I will get back to you.</p>
               </div>
             </div>
             <div className="grid gap-5">
@@ -879,10 +921,22 @@ export function PortfolioPage() {
                 />
               </label>
               <label className="grid gap-2">
-                <span className="text-sm font-medium text-slate-200">Email</span>
+                <span className="text-sm font-medium text-slate-200">Phone</span>
+                <input
+                  type="tel"
+                  required
+                  value={formState.phone}
+                  onChange={(event) =>
+                    setFormState((current) => ({ ...current, phone: event.target.value }))
+                  }
+                  className="rounded-lg border border-white/10 bg-slate-950/55 px-4 py-3 text-white outline-none focus:border-cyan-200/60 focus:ring-2 focus:ring-cyan-300/18"
+                  placeholder="+91 98765 43210"
+                />
+              </label>
+              <label className="grid gap-2">
+                <span className="text-sm font-medium text-slate-200">Email <span className="text-slate-500">(optional)</span></span>
                 <input
                   type="email"
-                  required
                   value={formState.email}
                   onChange={(event) =>
                     setFormState((current) => ({ ...current, email: event.target.value }))
@@ -906,15 +960,59 @@ export function PortfolioPage() {
               </label>
               <button
                 type="submit"
-                className="ring-glow inline-flex items-center justify-center gap-2 rounded-lg bg-cyan-300 px-6 py-3 text-sm font-semibold text-slate-950 hover:-translate-y-0.5"
+                disabled={submitState === "submitting"}
+                className="ring-glow inline-flex items-center justify-center gap-2 rounded-lg bg-cyan-300 px-6 py-3 text-sm font-semibold text-slate-950 hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-70"
               >
-                Send Message
+                {submitState === "submitting" ? "Sending..." : "Send Message"}
                 <FiSend />
               </button>
+              {submitState === "error" ? (
+                <p className="rounded-lg border border-red-300/20 bg-red-400/10 px-4 py-3 text-sm text-red-100">
+                  Something went wrong. Please try again, or use WhatsApp if it is urgent.
+                </p>
+              ) : null}
             </div>
           </motion.form>
         </div>
       </section>
+
+      {submitState === "success" ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 px-4 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96, y: 16 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="glass-panel w-full max-w-md rounded-[1.75rem] p-6 text-center"
+          >
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-cyan-300/10 text-cyan-200 ring-1 ring-cyan-300/20">
+              <FiSend />
+            </div>
+            <h3 className="mt-5 display-font text-2xl font-semibold text-white">
+              Thanks, I received it.
+            </h3>
+            <p className="mt-3 text-base leading-7 text-slate-300">
+              I will contact you as soon as possible. If it is urgent, send the same message on WhatsApp.
+            </p>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <Link
+                href={urgentWhatsappHref}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-300 px-4 py-3 text-sm font-semibold text-slate-950 hover:-translate-y-0.5"
+              >
+                <FiMessageCircle />
+                Urgent WhatsApp
+              </Link>
+              <button
+                type="button"
+                onClick={() => setSubmitState("idle")}
+                className="inline-flex items-center justify-center rounded-lg border border-white/12 bg-white/6 px-4 py-3 text-sm font-semibold text-white hover:bg-white/10"
+              >
+                Close
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      ) : null}
     </main>
   );
 }
