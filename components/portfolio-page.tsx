@@ -69,7 +69,7 @@ const socialLinks = [
 const highlights = [
   { value: "3.8/4.0", label: "TGPA" },
   { value: "2+", label: "Active client builds" },
-  { value: "Rs.50K+", label: "Amount paid by client" },
+  { value: "Rs.8L+", label: "Amount paid by client" },
 ] as const;
 
 const projects = [
@@ -81,8 +81,8 @@ const projects = [
     features: [
       "Single-brand ordering flow similar to Swiggy/Zomato",
       "Payment integration and database-backed order handling",
-      "Generated over Rs. 8 Lakhs in total sales/revenue for the client",
-      "Improved monthly revenue by approximately Rs. 75,000",
+      "Client project contract value: Rs. 8 Lakhs",
+      "Improved monthly sales by approximately Rs. 75,000",
     ],
     role: "Freelance Developer",
     featured: true,
